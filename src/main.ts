@@ -1,4 +1,4 @@
-import { App, Plugin, TFile } from 'obsidian';
+import { Plugin, TFile } from 'obsidian';
 import { CustomSelectorsSettings, DEFAULT_SETTINGS, CustomSelectorsSettingTab, SelectorConfig } from "./settings";
 
 export default class CustomSelectorsPlugin extends Plugin {
@@ -117,7 +117,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 				if (inputEl) currentValue = inputEl.value;
 				else if (child.textContent) currentValue = child.textContent;
 
-				child.style.display = 'none';
+				child.setCssProps({ display: 'none' });
 			}
 		});
 
@@ -127,8 +127,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 		// Create dropdown
 		const selectEl = document.createElement("select");
 		selectEl.classList.add('custom-selectors-plugin-select', 'search-input');
-		selectEl.style.width = '100%';
-		selectEl.style.background = 'transparent';
+		selectEl.setCssProps({ width: '100%', background: 'transparent' });
 		
 		// Default empty option
 		const emptyOpt = document.createElement("option");
@@ -146,12 +145,13 @@ export default class CustomSelectorsPlugin extends Plugin {
 			selectEl.appendChild(optionEl);
 		});
 
-		selectEl.addEventListener('change', async (e) => {
+		selectEl.addEventListener('change', (e) => {
 			const newValue = (e.target as HTMLSelectElement).value;
 			// Best way to update frontmatter safely:
 			const file = this.app.workspace.getActiveFile();
 			if (file instanceof TFile) {
-				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 					frontmatter[key] = newValue;
 				});
 			}
@@ -161,17 +161,19 @@ export default class CustomSelectorsPlugin extends Plugin {
 	}
 
 	private injectIntoTableCellInput(cell: HTMLElement, inputEl: HTMLInputElement, config: SelectorConfig) {
-		inputEl.style.display = 'none';
+		inputEl.setCssProps({ display: 'none' });
 
 		const currentValue = inputEl.value?.trim() || "";
 
 		const selectEl = document.createElement("select");
 		selectEl.classList.add('custom-selectors-plugin-select');
-		selectEl.style.width = '100%';
-		selectEl.style.background = 'var(--background-modifier-form-field)';
-		selectEl.style.color = 'var(--text-normal)';
-		selectEl.style.border = 'var(--input-border-width) solid var(--background-modifier-border)';
-		selectEl.style.borderRadius = 'var(--input-radius)';
+		selectEl.setCssProps({
+			width: '100%',
+			background: 'var(--background-modifier-form-field)',
+			color: 'var(--text-normal)',
+			border: 'var(--input-border-width) solid var(--background-modifier-border)',
+			borderRadius: 'var(--input-radius)'
+		});
 		
 		const emptyOpt = document.createElement("option");
 		emptyOpt.value = "";

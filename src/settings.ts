@@ -33,7 +33,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 		this.plugin.settings.selectors.forEach((selector, index) => {
 			const s = new Setting(containerEl)
 				.addText(text => text
-					.setPlaceholder("selector.name")
+					.setPlaceholder("Selector.name")
 					.setValue(selector.name)
 					.onChange(async (value) => {
 						selector.name = value;
@@ -41,7 +41,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 					})
 				)
 				.addText(text => text
-					.setPlaceholder("Option 1, Option 2")
+					.setPlaceholder("Option 1, option 2")
 					.setValue(selector.options.join(", "))
 					.onChange(async (value) => {
 						selector.options = value.split(",").map(s => s.trim()).filter(s => s.length > 0);
@@ -58,7 +58,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 					})
 				);
 			
-			s.infoEl.style.display = "none";
+			s.infoEl.setCssProps({ display: "none" });
 		});
 
 		new Setting(containerEl)
