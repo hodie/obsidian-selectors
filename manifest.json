@@ -4,8 +4,7 @@
 	"version": "1.0.0",
 	"minAppVersion": "1.4.0",
 	"description": "Allows defining properties as dropdowns in Obsidian Properties and Bases.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"author": "hodie Meyers",
+	"authorUrl": "https://github.com/hodie",
 	"isDesktopOnly": false
 }

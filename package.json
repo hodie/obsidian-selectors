@@ -10,8 +10,9 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},
-	"keywords": [],
-	"license": "0-BSD",
+	"keywords": ["obsidian", "plugin", "properties", "dropdown"],
+	"author": "hodie Meyers <hodiemeyers@gmail.com>",
+	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
