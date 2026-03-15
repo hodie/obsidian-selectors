@@ -149,7 +149,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 				if (inputEl) currentValue = inputEl.value;
 				else if (child.textContent) currentValue = child.textContent;
 
-				child.setCssProps({ display: 'none' });
+				child.addClass('cs-hidden');
 			}
 		});
 
@@ -159,7 +159,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 		// Create dropdown
 		const selectEl = document.createElement("select");
 		selectEl.classList.add('custom-selectors-plugin-select', 'search-input');
-		selectEl.setCssProps({ width: '100%', background: 'transparent' });
+		selectEl.setAttribute('aria-label', `Select value for ${key}`);
 		
 		// Default empty option
 		const emptyOpt = document.createElement("option");
@@ -219,21 +219,8 @@ export default class CustomSelectorsPlugin extends Plugin {
 		// The .bases-td is already position:absolute (uses inset-inline-start),
 		// so it already serves as a containing block for our overlay — don't change it.
 		const selectEl = document.createElement("select");
-		selectEl.classList.add('custom-selectors-plugin-select');
-		selectEl.setCssProps({
-			position: 'absolute',
-			top: '0',
-			left: '0',
-			width: '100%',
-			height: '100%',
-			background: 'var(--background-primary)',
-			color: 'var(--text-normal)',
-			border: 'none',
-			zIndex: '10',
-			cursor: 'pointer',
-			boxSizing: 'border-box',
-			padding: '0 4px'
-		});
+		selectEl.classList.add('custom-selectors-plugin-select', 'mod-base');
+		selectEl.setAttribute('aria-label', `Select value for ${config.name}`);
 
 		const emptyOpt = document.createElement("option");
 		emptyOpt.value = "";

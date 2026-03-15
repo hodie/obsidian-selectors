@@ -33,7 +33,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 		this.plugin.settings.selectors.forEach((selector, index) => {
 			const s = new Setting(containerEl)
 				.addText(text => text
-					.setPlaceholder("Selector.name")
+					.setPlaceholder("Property name")
 					.setValue(selector.name)
 					.onChange(async (value) => {
 						selector.name = value;
@@ -58,7 +58,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 					})
 				);
 			
-			s.infoEl.setCssProps({ display: "none" });
+			s.infoEl.addClass('cs-hidden');
 		});
 
 		new Setting(containerEl)
