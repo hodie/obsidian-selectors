@@ -20,7 +20,6 @@ export default class CustomSelectorsPlugin extends Plugin {
 			this.injectDropdowns(document.body);
 		});
 
-		// When a file is created from a Bases view (+New), set selector defaults
 		// When a file is created while a Bases view has selector columns,
 		// set the first option as the default value.
 		this.registerEvent(
