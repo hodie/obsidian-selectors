@@ -161,7 +161,19 @@ export default class CustomSelectorsPlugin extends Plugin {
 	}
 
 	private injectIntoTableCellInput(cell: HTMLElement, inputEl: HTMLInputElement, config: SelectorConfig) {
-		inputEl.setCssProps({ display: 'none' });
+		// Instead of display: none which can cause focus/blur race conditions in grids,
+		// visually hide the input but keep it in the layout box model.
+		inputEl.setCssProps({
+			opacity: '0',
+			position: 'absolute',
+			width: '1px',
+			height: '1px',
+			padding: '0',
+			margin: '-1px',
+			overflow: 'hidden',
+			border: 'none',
+			'z-index': '-1'
+		});
 
 		// When Obsidian enters edit mode for a cell, it dynamically blanks/creates the input element instantly, 
 		// so inputEl.value is often empty. The safest way to get the existing value is to read the data-value 
@@ -212,14 +224,14 @@ export default class CustomSelectorsPlugin extends Plugin {
 			selectEl.blur();
 		});
 
-		selectEl.addEventListener('click', (e) => {
-			e.stopPropagation(); // prevent closing the cell editor prematurely
-		});
-		selectEl.addEventListener('mousedown', (e) => {
+		const stopInteraction = (e: Event) => {
 			e.stopPropagation();
-		});
-		selectEl.addEventListener('mouseup', (e) => {
-			e.stopPropagation();
+		};
+		// Prevent base table's pointer/mouse controllers from hijacking our select box interactions
+		const evts = ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup'];
+		evts.forEach(evt => {
+			selectEl.addEventListener(evt, stopInteraction);
+			selectEl.addEventListener(evt, stopInteraction, { capture: true });
 		});
 
 		cell.appendChild(selectEl);
