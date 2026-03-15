@@ -54,38 +54,22 @@ export default class CustomSelectorsPlugin extends Plugin {
 			}
 		});
 
-		// 2. Base table view support.
-		const tables = container.querySelectorAll('table');
-		tables.forEach(table => {
-			const headers = Array.from(table.querySelectorAll('th'));
-			const selectorColumns: { index: number, config: SelectorConfig }[] = [];
-			
-			headers.forEach((th, index) => {
-				const colName = th.textContent?.trim();
-				if (colName) {
-					const config = this.settings.selectors.find(s => s.name === colName);
-					if (config) {
-						selectorColumns.push({ index, config });
-					}
-				}
-			});
+		// 2. Obsidian Bases table view support.
+		// Bases uses a custom div grid: .bases-td[data-property="note.<name>"]
+		this.settings.selectors.forEach(selectorConfig => {
+			if (!selectorConfig.name) return;
 
-			if (selectorColumns.length === 0) return;
+			const dataProperty = `note.${selectorConfig.name}`;
+			const cells = container.querySelectorAll(`.bases-td[data-property="${dataProperty}"]`);
 
-			const rows = table.querySelectorAll('tr');
-			rows.forEach(row => {
-				const cells = Array.from(row.children);
-				selectorColumns.forEach(sc => {
-					const cell = cells[sc.index] as HTMLElement;
-					if (!cell) return;
+			cells.forEach(cellEl => {
+				const cell = cellEl as HTMLElement;
+				if (cell.querySelector('.custom-selectors-plugin-select')) return;
 
-					const inputEl = cell.querySelector('input');
-					if (inputEl) {
-						if (!cell.querySelector('.custom-selectors-plugin-select')) {
-							this.injectIntoTableCellInput(cell, inputEl, sc.config);
-						}
-					}
-				});
+				const row = cell.closest('.bases-tr') as HTMLElement;
+				if (!row) return;
+
+				this.injectIntoBaseCell(cell, row, selectorConfig);
 			});
 		});
 	}
@@ -160,44 +144,39 @@ export default class CustomSelectorsPlugin extends Plugin {
 		valueContainer.appendChild(selectEl);
 	}
 
-	private injectIntoTableCellInput(cell: HTMLElement, inputEl: HTMLInputElement, config: SelectorConfig) {
-		// Instead of display: none which can cause focus/blur race conditions in grids,
-		// visually hide the input but keep it in the layout box model.
-		inputEl.setCssProps({
-			opacity: '0',
-			position: 'absolute',
-			width: '1px',
-			height: '1px',
-			padding: '0',
-			margin: '-1px',
-			overflow: 'hidden',
-			border: 'none',
-			'z-index': '-1'
-		});
+	private injectIntoBaseCell(cell: HTMLElement, row: HTMLElement, config: SelectorConfig) {
+		// Read current value from the contenteditable div inside the cell
+		const contentEl = cell.querySelector('.metadata-input-longtext') as HTMLElement | null;
+		const currentValue = (contentEl?.textContent || '').replace(/\s+/g, ' ').trim();
 
-		// When Obsidian enters edit mode for a cell, it dynamically blanks/creates the input element instantly, 
-		// so inputEl.value is often empty. The safest way to get the existing value is to read the data-value 
-		// attribute on the parent cell itself.
-		let currentValue = cell.getAttribute('data-value')?.trim() || "";
+		// Find the note file via the internal-link span in this row
+		const link = row.querySelector('.internal-link') as HTMLElement | null;
+		const href = link?.getAttribute('data-href');
 
-		// Clean up the value like we do for frontmatter
-		currentValue = currentValue.replace(/\s+/g, ' ').trim();
-
+		// The .bases-td is already position:absolute (uses inset-inline-start),
+		// so it already serves as a containing block for our overlay — don't change it.
 		const selectEl = document.createElement("select");
 		selectEl.classList.add('custom-selectors-plugin-select');
 		selectEl.setCssProps({
+			position: 'absolute',
+			top: '0',
+			left: '0',
 			width: '100%',
-			background: 'var(--background-modifier-form-field)',
+			height: '100%',
+			background: 'var(--background-primary)',
 			color: 'var(--text-normal)',
-			border: 'var(--input-border-width) solid var(--background-modifier-border)',
-			borderRadius: 'var(--input-radius)'
+			border: 'none',
+			zIndex: '10',
+			cursor: 'pointer',
+			boxSizing: 'border-box',
+			padding: '0 4px'
 		});
-		
+
 		const emptyOpt = document.createElement("option");
 		emptyOpt.value = "";
 		emptyOpt.text = "---";
 		selectEl.appendChild(emptyOpt);
-		
+
 		config.options.forEach((opt: string) => {
 			const optionEl = document.createElement('option');
 			optionEl.value = opt;
@@ -210,31 +189,29 @@ export default class CustomSelectorsPlugin extends Plugin {
 
 		selectEl.addEventListener('change', (e) => {
 			const newValue = (e.target as HTMLSelectElement).value;
-			inputEl.value = newValue;
-			
-			inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-			inputEl.dispatchEvent(new Event('change', { bubbles: true }));
-			
-			const enterEvent = new KeyboardEvent('keydown', {
-				key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true
-			});
-			inputEl.dispatchEvent(enterEvent);
-			inputEl.dispatchEvent(new Event('blur', { bubbles: true }));
-			
-			selectEl.blur();
+
+			// Update frontmatter directly via the Obsidian API
+			if (href) {
+				const file = this.app.metadataCache.getFirstLinkpathDest(href, '');
+				if (file instanceof TFile) {
+					// eslint-disable-next-line @typescript-eslint/no-floating-promises
+					this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
+						frontmatter[config.name] = newValue;
+					});
+				}
+			}
 		});
 
+		// Prevent base's pointer/mouse/focus controllers from hijacking our select
 		const stopInteraction = (e: Event) => {
 			e.stopPropagation();
 		};
-		// Prevent base table's pointer/mouse controllers from hijacking our select box interactions
-		const evts = ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup'];
+		const evts = ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'focusin'];
 		evts.forEach(evt => {
 			selectEl.addEventListener(evt, stopInteraction);
 			selectEl.addEventListener(evt, stopInteraction, { capture: true });
 		});
 
 		cell.appendChild(selectEl);
-		selectEl.focus();
 	}
 }
