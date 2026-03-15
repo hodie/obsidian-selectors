@@ -2,23 +2,27 @@
 	display: none !important;
 }
 
+.cs-setting-group {
+	margin-bottom: var(--size-4-4);
+}
+
 .cs-setting-group .setting-item {
-	background: none !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
 	margin-bottom: 0 !important;
 	border-bottom: 1px solid var(--background-modifier-border);
-	padding: var(--size-4-4) var(--size-4-6);
 }
 
 .cs-setting-group .setting-item:last-child {
 	border-bottom: none;
 }
 
-.cs-setting-group {
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
-	margin-bottom: var(--size-4-4);
+.cs-setting-group .setting-item:not(:first-child) {
+	border-top-left-radius: 0 !important;
+	border-top-right-radius: 0 !important;
+}
+
+.cs-setting-group .setting-item:not(:last-child) {
+	border-bottom-left-radius: 0 !important;
+	border-bottom-right-radius: 0 !important;
 }
 
 
