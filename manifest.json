@@ -5,6 +5,6 @@
 	"minAppVersion": "1.8.0",
 	"description": "Allows defining properties as dropdowns in Obsidian Properties and Bases.",
 	"author": "hodie Meyers",
-	"authorUrl": "https://github.com/hodie/obsidian-custom-selectors",
+	"authorUrl": "https://github.com/hodie",
 	"isDesktopOnly": false
 }
