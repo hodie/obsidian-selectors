@@ -163,7 +163,13 @@ export default class CustomSelectorsPlugin extends Plugin {
 	private injectIntoTableCellInput(cell: HTMLElement, inputEl: HTMLInputElement, config: SelectorConfig) {
 		inputEl.setCssProps({ display: 'none' });
 
-		const currentValue = inputEl.value?.trim() || "";
+		// When Obsidian enters edit mode for a cell, it dynamically blanks/creates the input element instantly, 
+		// so inputEl.value is often empty. The safest way to get the existing value is to read the data-value 
+		// attribute on the parent cell itself.
+		let currentValue = cell.getAttribute('data-value')?.trim() || "";
+
+		// Clean up the value like we do for frontmatter
+		currentValue = currentValue.replace(/\s+/g, ' ').trim();
 
 		const selectEl = document.createElement("select");
 		selectEl.classList.add('custom-selectors-plugin-select');
