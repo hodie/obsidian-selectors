@@ -4,7 +4,7 @@ import { CustomSelectorsSettings, DEFAULT_SETTINGS, CustomSelectorsSettingTab, S
 export default class CustomSelectorsPlugin extends Plugin {
 	settings: CustomSelectorsSettings;
 	observer: MutationObserver;
-	basesSelectors: SelectorConfig[] = [];
+	basesDefaults: Map<string, SelectorConfig[]> = new Map();
 
 	async onload() {
 		await this.loadSettings();
@@ -25,7 +25,8 @@ export default class CustomSelectorsPlugin extends Plugin {
 		this.registerEvent(
 			this.app.vault.on('create', (file) => {
 				if (!(file instanceof TFile) || file.extension !== 'md') return;
-				const defaults = this.basesSelectors.filter(s => s.defaultFirst);
+				const fileFolder = file.path.substring(0, file.path.lastIndexOf('/') + 1);
+				const defaults = (this.basesDefaults.get(fileFolder) || []).filter(s => s.defaultFirst);
 				if (defaults.length === 0) return;
 				setTimeout(() => {
 					// eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -75,17 +76,13 @@ export default class CustomSelectorsPlugin extends Plugin {
 			}
 		});
 
-		// 2. Obsidian Bases table view support.
+			// 2. Obsidian Bases table view support.
 		// Bases uses a custom div grid: .bases-td[data-property="note.<name>"]
-		const activeBasesSelectors: SelectorConfig[] = [];
 		this.settings.selectors.forEach(selectorConfig => {
 			if (!selectorConfig.name) return;
 
 			const dataProperty = `note.${selectorConfig.name}`;
 			const cells = container.querySelectorAll(`.bases-td[data-property="${dataProperty}"]`);
-			if (cells.length > 0 && selectorConfig.options.length > 0) {
-				activeBasesSelectors.push(selectorConfig);
-			}
 
 			cells.forEach(cellEl => {
 				const cell = cellEl as HTMLElement;
@@ -112,7 +109,36 @@ export default class CustomSelectorsPlugin extends Plugin {
 				this.injectIntoBaseCell(cell, row, selectorConfig);
 			});
 		});
-		this.basesSelectors = activeBasesSelectors;
+
+		// Build folder → selectors mapping for defaults.
+		// Each Bases view has files in specific folders; only apply defaults
+		// to files created in matching folders.
+		const basesDefaults = new Map<string, SelectorConfig[]>();
+		container.querySelectorAll('.bases-view').forEach(basesView => {
+			const folders = new Set<string>();
+			basesView.querySelectorAll('.internal-link[data-href]').forEach(el => {
+				const href = el.getAttribute('data-href') || '';
+				const lastSlash = href.lastIndexOf('/');
+				folders.add(lastSlash >= 0 ? href.substring(0, lastSlash + 1) : '');
+			});
+
+			const viewSelectors: SelectorConfig[] = [];
+			this.settings.selectors.forEach(config => {
+				if (!config.name || config.options.length === 0) return;
+				if (basesView.querySelector(`.bases-td[data-property="note.${config.name}"]`)) {
+					viewSelectors.push(config);
+				}
+			});
+
+			folders.forEach(folder => {
+				const existing = basesDefaults.get(folder) || [];
+				viewSelectors.forEach(s => {
+					if (!existing.includes(s)) existing.push(s);
+				});
+				basesDefaults.set(folder, existing);
+			});
+		});
+		this.basesDefaults = basesDefaults;
 	}
 
 	private handleMutations(mutations: MutationRecord[]) {
