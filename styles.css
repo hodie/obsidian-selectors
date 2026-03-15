@@ -2,25 +2,25 @@
 	display: none !important;
 }
 
-.cs-selector-section {
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
-	padding: 0 16px;
-	margin-bottom: 16px;
-}
-
-.cs-selector-section .setting-item {
+.cs-setting-group .setting-item {
 	background: none !important;
-	border: none;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	margin-bottom: 0 !important;
 	border-bottom: 1px solid var(--background-modifier-border);
-	border-radius: 0;
-	box-shadow: none;
-	padding: 12px 0;
+	padding: var(--size-4-4) var(--size-4-6);
 }
 
-.cs-selector-section .setting-item:last-child {
+.cs-setting-group .setting-item:last-child {
 	border-bottom: none;
 }
+
+.cs-setting-group {
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+	margin-bottom: var(--size-4-4);
+}
+
 
 .custom-selectors-plugin-select {
 	width: 100%;

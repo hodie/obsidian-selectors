@@ -39,10 +39,9 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 			.setHeading();
 
 		this.plugin.settings.selectors.forEach((selector, index) => {
-			const section = containerEl.createDiv({ cls: 'cs-selector-section' });
 			const shortName = selector.name.replace(/^selector\./, '');
 
-			new Setting(section)
+			new Setting(containerEl)
 				.setName(shortName || "New selector")
 				.setHeading()
 				.addExtraButton(btn => btn
@@ -60,7 +59,9 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 			const nameCode = nameDesc.createEl("code", { text: `selector.${shortName || "<name>"}` });
 			nameDesc.append(" as a property column in your Base view.");
 
-			const nameSetting = new Setting(section)
+			const group = containerEl.createDiv({ cls: 'cs-setting-group' });
+
+			new Setting(group)
 				.setName("Name")
 				.setDesc(nameDesc)
 				.addText(text => text
@@ -69,14 +70,11 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						selector.name = `selector.${value}`;
 						nameCode.textContent = `selector.${value || "<name>"}`;
-						// Update section heading
-						const headingEl = section.querySelector('.setting-item-heading .setting-item-name');
-						if (headingEl) headingEl.textContent = value || "New selector";
 						await this.plugin.saveSettings();
 					})
 				);
 
-			new Setting(section)
+			new Setting(group)
 				.setName("Options")
 				.setDesc("Comma-separated list of dropdown values.")
 				.addText(text => text
@@ -88,7 +86,7 @@ export class CustomSelectorsSettingTab extends PluginSettingTab {
 					})
 				);
 
-			new Setting(section)
+			new Setting(group)
 				.setName("Default to first option")
 				.setDesc("When creating a new file from a Bases view that includes this property as a column, set the first option as the default value.")
 				.addToggle(toggle => toggle
