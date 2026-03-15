@@ -4,7 +4,7 @@
 	"version": "1.1.0",
 	"minAppVersion": "1.8.0",
 	"description": "Allows defining 'selector' properties (e.g., selector.status) which display as interactive dropdown menus with pre-defined options in both the standard Properties View and inside Bases views.",
-	"author": "hodie Meyers",
+	"author": "hodie",
 	"authorUrl": "https://github.com/hodie",
 	"isDesktopOnly": false
 }
