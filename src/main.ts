@@ -18,6 +18,44 @@ export default class CustomSelectorsPlugin extends Plugin {
 			// initial scan just in case
 			this.injectDropdowns(document.body);
 		});
+
+		// When a file is created from a Bases view (+New), set selector defaults
+		this.registerEvent(
+			this.app.vault.on('create', (file) => {
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+
+				// Only act when a Bases view is active
+				const leaf = this.app.workspace.getMostRecentLeaf();
+				if (!leaf?.view || leaf.view.getViewType() !== 'bases') return;
+
+				// Only default selectors that are columns in this Base
+				const basesView = (leaf as any).containerEl?.querySelector('.bases-view');
+				if (!basesView) return;
+
+				const headerNames = new Set(
+					Array.from(basesView.querySelectorAll('.bases-table-header-name'))
+						.map((el: Element) => el.textContent?.trim())
+						.filter((s): s is string => !!s)
+				);
+
+				const relevantSelectors = this.settings.selectors.filter(
+					s => s.name && s.options.length > 0 && headerNames.has(s.name)
+				);
+				if (relevantSelectors.length === 0) return;
+
+				// Delay to let Bases finish initializing the file
+				setTimeout(() => {
+					// eslint-disable-next-line @typescript-eslint/no-floating-promises
+					this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
+						relevantSelectors.forEach(selector => {
+							if (!frontmatter[selector.name]) {
+								frontmatter[selector.name] = selector.options[0];
+							}
+						});
+					});
+				}, 200);
+			})
+		);
 	}
 
 	onunload() {
@@ -64,7 +102,17 @@ export default class CustomSelectorsPlugin extends Plugin {
 
 			cells.forEach(cellEl => {
 				const cell = cellEl as HTMLElement;
-				if (cell.querySelector('.custom-selectors-plugin-select')) return;
+				const existingSelect = cell.querySelector('.custom-selectors-plugin-select') as HTMLSelectElement | null;
+
+				if (existingSelect) {
+					// Sync dropdown with underlying value if data changed externally
+					const contentEl = cell.querySelector('.metadata-input-longtext') as HTMLElement | null;
+					const currentValue = (contentEl?.textContent || '').replace(/\s+/g, ' ').trim();
+					if (existingSelect.value !== currentValue) {
+						existingSelect.value = currentValue || '';
+					}
+					return;
+				}
 
 				const row = cell.closest('.bases-tr') as HTMLElement;
 				if (!row) return;
@@ -131,7 +179,22 @@ export default class CustomSelectorsPlugin extends Plugin {
 
 		selectEl.addEventListener('change', (e) => {
 			const newValue = (e.target as HTMLSelectElement).value;
-			// Best way to update frontmatter safely:
+
+			// Trigger Obsidian's internal reactive property system through the
+			// hidden native input so other views (like Bases) update immediately.
+			const nativeInput = valueContainer.querySelector('input') as HTMLInputElement | null;
+			const nativeEditable = valueContainer.querySelector('[contenteditable]') as HTMLElement | null;
+
+			if (nativeInput) {
+				nativeInput.value = newValue;
+				nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
+				nativeInput.dispatchEvent(new Event('change', { bubbles: true }));
+			} else if (nativeEditable) {
+				nativeEditable.textContent = newValue;
+				nativeEditable.dispatchEvent(new InputEvent('input', { bubbles: true }));
+			}
+
+			// Also write via processFrontMatter as a fallback
 			const file = this.app.workspace.getActiveFile();
 			if (file instanceof TFile) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
