@@ -29,7 +29,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 				const defaults = (this.basesDefaults.get(fileFolder) || []).filter(s => s.defaultFirst);
 				if (defaults.length === 0) return;
 				setTimeout(() => {
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
+					// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; awaiting would block the UI for a non-critical write
 					this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 						defaults.forEach(selector => {
 							if (!frontmatter[selector.name]) {
@@ -67,7 +67,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 			if (leaf.view.containerEl.parentElement === leafEl) {
 				const view = leaf.view;
 				if ('file' in view && view.file instanceof TFile) {
-					targetFile = view.file as TFile;
+					targetFile = view.file;
 				}
 			}
 		});
@@ -250,7 +250,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 			// the correct file is targeted even when open in multiple tabs.
 			const file = this.getFileFromElement(valueContainer);
 			if (file instanceof TFile) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; awaiting would block the UI for a non-critical write
 				this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 					frontmatter[key] = newValue;
 				});
@@ -298,7 +298,7 @@ export default class CustomSelectorsPlugin extends Plugin {
 			if (href) {
 				const file = this.app.metadataCache.getFirstLinkpathDest(href, '');
 				if (file instanceof TFile) {
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
+					// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; awaiting would block the UI for a non-critical write
 					this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 						frontmatter[config.name] = newValue;
 					});
